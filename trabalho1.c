@@ -4,14 +4,14 @@
 void inversao(int v[], int n){
     int temp;
 
-    //for (int i = 0; i < n/2; i++){
-    //    temp = v[i];
-    //    v[i] = v[n-1-i];
-    //    v[n-1-i] = temp;
-    //}
+    for (int i = 0; i < n/2; i++){
+        temp = v[i];
+        v[i] = v[n-1-i];
+        v[n-1-i] = temp;
+    }
 
     for(int i = 0; i < n; i++){
-        printf("%d ", v[n-1-i]);
+        printf("%d ", v[i]);
     }
 
     printf("\n");
@@ -38,6 +38,8 @@ void busca_binaria_it(int v[], int n){
 
     scanf("%d", &busca);
 
+    int crescente = v[0] < v[n - 1];
+
     while(l <= r){
         int m = l + (r - l) /2;
 
@@ -46,24 +48,36 @@ void busca_binaria_it(int v[], int n){
             return;
         }
 
-        if (v[m] < busca){
-            l = m + 1;
+        if (crescente){
+            if (v[m] < busca){
+                l = m + 1;
+            }
+            else {
+                r = m - 1;
+            }
         }
         else {
-            r = m - 1;
+            if (v[m] > busca){
+                l = m + 1;
+            }
+            else {
+                r = m - 1;
+            }
         }
+        
     }
 
     printf("NAO\n");
 
 }
 
-void busca_binaria_rec(int v[], int l, int r, int busca){
+void busca_binaria_rec(int v[], int l, int r, int busca, int n){
     if (l>r) {
         printf("NAO\n");
         return;
     }    
     
+    int crescente = v[0] < v[n - 1];
 
     int m = l + (r - l) / 2;
 
@@ -72,12 +86,23 @@ void busca_binaria_rec(int v[], int l, int r, int busca){
         return;
     }
 
-    if (v[m] < busca){
-        busca_binaria_rec(v, m + 1, r, busca);
-        return;
-    }
+    if (crescente){
+        if (v[m] < busca){
+            busca_binaria_rec(v, m + 1, r, busca, n);
+            return;
+        }
 
-    busca_binaria_rec(v, l, m-1, busca);
+        busca_binaria_rec(v, l, m-1, busca, n);
+    }
+    else {
+        if (v[m] > busca){
+            busca_binaria_rec(v, m + 1, r, busca, n);
+            return;
+        }
+
+        busca_binaria_rec(v, l, m-1, busca, n);
+    }
+    
 
 }
 
@@ -112,7 +137,7 @@ int main(){
             case 4:
                 int x;
                 scanf("%d", &x);
-                busca_binaria_rec(v, 0, n-1, x);
+                busca_binaria_rec(v, 0, n-1, x, n);
             break;
 
             case 5: 
