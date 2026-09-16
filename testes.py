@@ -14,6 +14,9 @@ def executar_teste(tam, opcao, busca_val):
         entrada = f"{tam}\n{elementos_vetor}\n{opcao}\n{busca_val}\n5\n"
 
     tempos = []
+    atrib = 0
+    comp = 0
+    
     for _ in range(EXECUCOES):
         resultado = subprocess.run(
             ["./trabalho1_bench"],
@@ -22,15 +25,22 @@ def executar_teste(tam, opcao, busca_val):
             capture_output=True
         )
 
-        tempo = float(resultado.stdout.strip())
+        
+        saida = resultado.stdout.strip().split("|")
+        tempo = float(saida[0].strip())
+        atrib = int(saida[1].strip())
+        comp = int(saida[2].strip())
+
         tempos.append(tempo)
 
-    return sum(tempos) / len(tempos)
+    tempo_medio = sum(tempos) / len(tempos)
+    return tempo_medio, atrib, comp
 
 
 def grafico_geral(resultados):
     plt.figure(figsize=(10, 9))
-    for nome, tempos in resultados.items():
+    for nome, res in resultados.items():
+        tempos = [r[0] for r in res]
         plt.plot(TAM_ENTRADAS, tempos, marker='o', label=nome)
 
     plt.xlabel("Tamanho da entrada (n)")
@@ -48,8 +58,11 @@ def grafico_geral(resultados):
 
 def grafico_binarias(resultados):
     plt.figure(figsize=(10, 9))
-    plt.plot(TAM_ENTRADAS, resultados["Busca Binária Iterativa"], marker='o', label="Busca Binária Iterativa")
-    plt.plot(TAM_ENTRADAS, resultados["Busca Binária Recursiva"], marker='o', label="Busca Binária Recursiva")
+    tempos_it = [d[0] for d in resultados["Busca Binária Iterativa"]]
+    tempos_rec = [d[0] for d in resultados["Busca Binária Recursiva"]]
+    
+    plt.plot(TAM_ENTRADAS, tempos_it, marker='o', label="Busca Binária Iterativa")
+    plt.plot(TAM_ENTRADAS, tempos_rec, marker='o', label="Busca Binária Recursiva")
     
     plt.xlabel("Tamanho da entrada (n)")
     plt.ylabel("Tempo médio de execução (s)")  
@@ -76,6 +89,7 @@ def main():
 
     for tam in TAM_ENTRADAS:
         print(f"testando para {tam}")
+        
         resultados["Inversão"].append(executar_teste(tam, 1, 0))
 
         pior_caso = tam + 1 
@@ -84,7 +98,15 @@ def main():
         resultados["Busca Binária Iterativa"].append(executar_teste(tam, 3, pior_caso))
         resultados["Busca Binária Recursiva"].append(executar_teste(tam, 4, pior_caso))
 
-    print(resultados)
+   
+    print("\n" + "="*80)
+    print(f"{'Operação':<26} | {'Tamanho':<10} | {'Tempo (s)':<15} | {'Atribuições':<12} | {'Comparações':<12}")
+    print("="*80)
+    for nome in resultados:
+        for i, tam in enumerate(TAM_ENTRADAS):
+            t, a, c = resultados[nome][i]
+            print(f"{nome:<26} | {tam:<10} | {t:<15.9f} | {a:<12} | {c:<12}")
+        print("-" * 80)
 
     grafico_geral(resultados)
     grafico_binarias(resultados)
