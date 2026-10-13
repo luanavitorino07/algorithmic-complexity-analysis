@@ -1,116 +1,83 @@
 import subprocess
 import matplotlib.pyplot as plt
 
-TAM_ENTRADAS = [1000, 50000, 100000, 500000, 1000000]
-EXECUCOES = 100
+TAMANHOS = [1000, 50000, 100000, 500000, 1000000]
+CASOS = [
+    "Inserções no Início",
+    "Acesso por Índice",
+    "Remoções no Início",
+    "Remoções no Meio",
+    "Percurso Completo"
+]
 
-def executar_teste(tam, opcao, busca_val):
-    print(f"testando opcao {opcao}, tamanho {tam}")
-    elementos_vetor = " ".join(str(i) for i in range(0, tam))  # range garante vetor ordenado
+def rodar_benchmark(executavel):
+    resultado = subprocess.run(
+        [executavel],
+        text=True,
+        capture_output=True,
+        check=True
+    )
+    linhas = resultado.stdout.strip().split("\n")
+    dados = {}
+    for linha in linhas:
+        if "|" in linha and "Tamanho" not in linha and "---" not in linha:
+            partes = [p.strip() for p in linha.split("|")]
+            if len(partes) == 6:
+                tam = int(partes[0])
+                tempos = [float(t) for t in partes[1:]]
+                dados[tam] = tempos
+    return dados
 
-    if opcao == 1:
-        entrada = f"{tam}\n{elementos_vetor}\n{opcao}\n5\n"
-    else:
-        entrada = f"{tam}\n{elementos_vetor}\n{opcao}\n{busca_val}\n5\n"
-
-    tempos = []
-    atrib = 0
-    comp = 0
-    
-    for _ in range(EXECUCOES):
-        resultado = subprocess.run(
-            ["./trabalho1_bench"],
-            input=entrada,
-            text=True,
-            capture_output=True
-        )
-
+def gerar_graficos(res_seq, res_enc):
+    for i, caso in enumerate(CASOS):
+        plt.figure(figsize=(9, 6))
         
-        saida = resultado.stdout.strip().split("|")
-        tempo = float(saida[0].strip())
-        atrib = int(saida[1].strip())
-        comp = int(saida[2].strip())
+        tamanhos_disponiveis = [tam for tam in TAMANHOS if tam in res_seq and tam in res_enc]
+        tempos_seq = [res_seq[tam][i] for tam in tamanhos_disponiveis]
+        tempos_enc = [res_enc[tam][i] for tam in tamanhos_disponiveis]
 
-        tempos.append(tempo)
+        plt.plot(tamanhos_disponiveis, tempos_seq, marker='o', label="Lista Sequencial")
+        plt.plot(tamanhos_disponiveis, tempos_enc, marker='s', label="Lista Encadeada")
 
-    tempo_medio = sum(tempos) / len(tempos)
-    return tempo_medio, atrib, comp
-
-
-def grafico_geral(resultados):
-    plt.figure(figsize=(10, 9))
-    for nome, res in resultados.items():
-        tempos = [r[0] for r in res]
-        plt.plot(TAM_ENTRADAS, tempos, marker='o', label=nome)
-
-    plt.xlabel("Tamanho da entrada (n)")
-    plt.ylabel("Tempo médio de execução (s)")  
-    plt.title("Tempo de execução por tamanho de entrada — Pior Caso")
-    
-    plt.xticks(TAM_ENTRADAS)
-    plt.ticklabel_format(style='plain', axis='x') 
-    
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.savefig("grafico_tempos.png", dpi=150)
-    plt.show()
-
-
-def grafico_binarias(resultados):
-    plt.figure(figsize=(10, 9))
-    tempos_it = [d[0] for d in resultados["Busca Binária Iterativa"]]
-    tempos_rec = [d[0] for d in resultados["Busca Binária Recursiva"]]
-    
-    plt.plot(TAM_ENTRADAS, tempos_it, marker='o', label="Busca Binária Iterativa")
-    plt.plot(TAM_ENTRADAS, tempos_rec, marker='o', label="Busca Binária Recursiva")
-    
-    plt.xlabel("Tamanho da entrada (n)")
-    plt.ylabel("Tempo médio de execução (s)")  
-    plt.title("Tempo de execução — Buscas Binárias (Pior Caso)")
-    
-    plt.xticks(TAM_ENTRADAS)
-    plt.ticklabel_format(style='plain', axis='x')
-    
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.savefig("grafico_tempos_binarias.png", dpi=150)
-    plt.show()
-
+        plt.xlabel("Tamanho da entrada (n)")
+        plt.ylabel("Tempo médio de execução (s)")
+        plt.title(f"Comparação de Desempenho — {caso}")
+        plt.xticks(tamanhos_disponiveis)
+        plt.ticklabel_format(style='plain', axis='x')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        
+        nome_ficheiro = f"grafico_caso_{i+1}.png"
+        plt.savefig(nome_ficheiro, dpi=150)
+        plt.close()
 
 def main():
-    subprocess.run(["gcc", "trabalho1_bench.c", "-o", "trabalho1_bench"], check=True)
+    print("A compilar os códigos de benchmark...")
+    subprocess.run(["gcc", "benchmark_sequencial.c", "ListaSequencial.c", "-o", "bench_seq", "-O3"], check=True)
+    subprocess.run(["gcc", "benchmark_encadeada.c", "ListaEncadeada.c", "-o", "bench_enc", "-O3"], check=True)
 
-    resultados = {
-        "Inversão": [],
-        "Busca Sequencial": [],
-        "Busca Binária Iterativa": [],
-        "Busca Binária Recursiva": []
-    }
+    print("A executar benchmark da Lista Sequencial...")
+    res_seq = rodar_benchmark("./bench_seq")
 
-    for tam in TAM_ENTRADAS:
-        print(f"testando para {tam}")
-        
-        resultados["Inversão"].append(executar_teste(tam, 1, 0))
+    print("A executar benchmark da Lista Encadeada...")
+    res_enc = rodar_benchmark("./bench_enc")
 
-        pior_caso = tam + 1 
+    print("\n" + "="*115)
+    print(f"{'Tamanho':<10} | {'Implementação':<18} | {'Caso 1 (s)':<13} | {'Caso 2 (s)':<13} | {'Caso 3 (s)':<13} | {'Caso 4 (s)':<13} | {'Caso 5 (s)':<13}")
+    print("="*115)
+    
+    for tam in TAMANHOS:
+        if tam in res_seq:
+            t_seq = res_seq[tam]
+            print(f"{tam:<10} | {'Sequencial':<18} | {t_seq[0]:<13.9f} | {t_seq[1]:<13.9f} | {t_seq[2]:<13.9f} | {t_seq[3]:<13.9f} | {t_seq[4]:<13.9f}")
+        if tam in res_enc:
+            t_enc = res_enc[tam]
+            print(f"{tam:<10} | {'Encadeada':<18} | {t_enc[0]:<13.9f} | {t_enc[1]:<13.9f} | {t_enc[2]:<13.9f} | {t_enc[3]:<13.9f} | {t_enc[4]:<13.9f}")
+        print("-" * 115)
 
-        resultados["Busca Sequencial"].append(executar_teste(tam, 2, pior_caso))
-        resultados["Busca Binária Iterativa"].append(executar_teste(tam, 3, pior_caso))
-        resultados["Busca Binária Recursiva"].append(executar_teste(tam, 4, pior_caso))
-
-   
-    print("\n" + "="*80)
-    print(f"{'Operação':<26} | {'Tamanho':<10} | {'Tempo (s)':<15} | {'Atribuições':<12} | {'Comparações':<12}")
-    print("="*80)
-    for nome in resultados:
-        for i, tam in enumerate(TAM_ENTRADAS):
-            t, a, c = resultados[nome][i]
-            print(f"{nome:<26} | {tam:<10} | {t:<15.9f} | {a:<12} | {c:<12}")
-        print("-" * 80)
-
-    grafico_geral(resultados)
-    grafico_binarias(resultados)
-
+    print("\nA gerar gráficos comparativos...")
+    gerar_graficos(res_seq, res_enc)
+    print("Processo concluído com sucesso! Gráficos guardados como 'grafico_caso_X.png'.")
 
 if __name__ == "__main__":
     main()

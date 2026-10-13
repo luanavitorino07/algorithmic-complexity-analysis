@@ -51,7 +51,7 @@ int busca_binaria_it(int v[], int n, int busca) {
     int crescente = v[0] < v[n - 1];
     atribuicoes++;
 
-    while(1) {   
+    while(1) {  
 
         comparacoes++;    
         if (!(l <= r)) break;
@@ -61,7 +61,7 @@ int busca_binaria_it(int v[], int n, int busca) {
 
         comparacoes++;
         if (v[m] == busca) return 1;
-        
+
 
         comparacoes++;
         if (crescente) {
