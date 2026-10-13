@@ -26,10 +26,6 @@ int main() {
     int num_tamanhos = 5;
     int repeticoes = 10;
 
-    printf("=== BENCHMARK: LISTA ENCADEADA ===\n");
-    printf("Tamanho | Caso 1: Ins. Inicio (s) | Caso 2: Acesso Indice (s) | Caso 3: Rem. Inicio (s) | Caso 4: Rem. Meio (s) | Caso 5: Percurso (s)\n");
-    printf("-------------------------------------------------------------------------------------------------------------------------\n");
-
     for (int t = 0; t < num_tamanhos; t++) {
         int n = tamanhos[t];
         double tempos[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
