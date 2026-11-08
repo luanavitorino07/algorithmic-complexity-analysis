@@ -11,6 +11,5 @@ void selection_sort(int arr[], size_t n);
 void merge_sort(int arr[], size_t n);
 void quick_sort_first_pivot(int arr[], size_t n);
 void quick_sort_random_pivot(int arr[], size_t n);
-void heap_sort(int arr[], size_t n);
 
 #endif
